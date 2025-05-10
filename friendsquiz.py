@@ -4,10 +4,8 @@ from PIL import Image, ImageTk
 import random
 import pygame
 
-# Initialize pygame mixer
 pygame.mixer.init()
 
-# Quotes dataset
 quotes = [
     {"quote": "How you doin'?", "char": "Joey Tribbiani"},
     {"quote": "We were on a break!", "char": "Ross Geller"},
@@ -29,8 +27,6 @@ quotes = [
     {"quote": "Welcome to the real world. It sucks. You're gonna love it.", "char": "Monica Geller"},
     {"quote": "I got off the plane.", "char": "Rachel Green"},
     {"quote": "They don't know that we know they know we know.", "char": "Phoebe Buffay"},
-    
-    # Extended quotes
     {"quote": "If I had to, I'd pee on any one of you.", "char": "Joey Tribbiani"},
     {"quote": "Because she’s your lobster!", "char": "Phoebe Buffay"},
     {"quote": "I’m hopeless and awkward and desperate for love!", "char": "Chandler Bing"},
@@ -56,7 +52,6 @@ quotes = [
 
 all_chars = list(set(q["char"] for q in quotes))
 
-# # Mapping for character images
 # char_images = {
 #     "Joey Tribbiani": "joey.jpg",
 #     "Ross Geller": "ross.jpg",
@@ -74,8 +69,6 @@ class QuizApp:
         self.root.title("FRIENDS Quiz")
         self.root.geometry("800x600")
         self.root.resizable(False, False)
-
-        # Background
         bg_img = Image.open("friends.jpg").resize((800, 600))
         self.bg_photo = ImageTk.PhotoImage(bg_img)
         self.bg_label = tk.Label(root, image=self.bg_photo)
