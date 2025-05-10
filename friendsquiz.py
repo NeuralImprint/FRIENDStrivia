@@ -190,7 +190,6 @@ class QuizApp:
             self.root.destroy()
 
 
-# Run the app
 root = tk.Tk()
 app = QuizApp(root)
 root.mainloop()
