@@ -1,10 +1,7 @@
-import tkinter as tk
-from tkinter import messagebox
-from PIL import Image, ImageTk
+import streamlit as st
+from PIL import Image
 import random
-import pygame
-
-pygame.mixer.init()
+import time
 
 quotes = [
     {"quote": "How you doin'?", "char": "Joey Tribbiani"},
@@ -49,147 +46,76 @@ quotes = [
     {"quote": "Look at me! I'm Chandler! Could I BE wearing any more clothes?", "char": "Joey Tribbiani"}
 ]
 
-
 all_chars = list(set(q["char"] for q in quotes))
 
-# char_images = {
-#     "Joey Tribbiani": "joey.jpg",
-#     "Ross Geller": "ross.jpg",
-#     "Chandler Bing": "chandler.jpg",
-#     "Phoebe Buffay": "phoebe.jpg",
-#     "Rachel Green": "rachel.jpg",
-#     "Monica Geller": "monica.jpg",
-#     "Janice": "janice.jpg",
-# }
+def run_quiz():
+    if "score" not in st.session_state:
+        st.session_state.score = 0
+    if "q_no" not in st.session_state:
+        st.session_state.q_no = 0
+    if "qs" not in st.session_state:
+        st.session_state.qs = random.sample(quotes, 5)
+    if "time_left" not in st.session_state:
+        st.session_state.time_left = 10
+    if "opts" not in st.session_state:
+        st.session_state.opts = []
+    if "current_question" not in st.session_state:
+        st.session_state.current_question = st.session_state.qs[st.session_state.q_no]
 
+    st.title("FRIENDS Quiz")
+    
+    # Show background image
+    bg_image = Image.open("friends.jpg")
+    st.image(bg_image, use_column_width=True)
 
-class QuizApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("FRIENDS Quiz")
-        self.root.geometry("800x600")
-        self.root.resizable(False, False)
-        bg_img = Image.open("friends.jpg").resize((800, 600))
-        self.bg_photo = ImageTk.PhotoImage(bg_img)
-        self.bg_label = tk.Label(root, image=self.bg_photo)
-        self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+    st.markdown(f"### Q{st.session_state.q_no + 1}: \"{st.session_state.current_question['quote']}\"")
 
-        self.q_no = 0
-        self.score = 0
-        self.qs = []
-        self.cur_q = None
-        self.timer_id = None
-        self.time_left = 10
+    correct_char = st.session_state.current_question["char"]
+    wrong_chars = random.sample([c for c in all_chars if c != correct_char], 3)
+    options = wrong_chars + [correct_char]
+    random.shuffle(options)
+    st.session_state.opts = options
 
-        self.q_label = tk.Label(root, text="", wraplength=700, font=("Helvetica", 18, "bold"), bg="#fff8f0")
-        self.q_label.pack(pady=30)
-
-        self.image_label = tk.Label(root, bg="#fff8f0")
-        self.image_label.pack()
-
-        self.btns = []
-        for i in range(4):
-            b = tk.Button(root, text="", font=("Arial", 14), width=40, height=2, bg="#f4c542", fg="black",
-                          command=lambda i=i: self.check_ans(i))
-            b.pack(pady=5)
-            self.btns.append(b)
-
-        self.timer_label = tk.Label(root, text="", font=("Arial", 14, "bold"), fg="red", bg="#fff8f0")
-        self.timer_label.pack(pady=15)
-
-        self.status = tk.Label(root, text="", font=("Arial", 12), bg="#fff8f0")
-        self.status.pack(pady=10)
-
-        self.start_quiz()
-
-    def start_quiz(self):
-        self.qs = random.sample(quotes, 5)
-        self.q_no = 0
-        self.score = 0
-        self.next_q()
-
-    def next_q(self):
-        if self.timer_id:
-            self.root.after_cancel(self.timer_id)
-        if self.q_no >= 5:
-            self.show_result()
-            return
-
-        self.cur_q = self.qs[self.q_no]
-        quote = self.cur_q["quote"]
-        ans = self.cur_q["char"]
-        wrong = random.sample([c for c in all_chars if c != ans], 3)
-        self.opts = wrong + [ans]
-        random.shuffle(self.opts)
-
-        self.q_label.config(text=f"Q{self.q_no + 1}: \"{quote}\"")
-        for i, opt in enumerate(self.opts):
-            self.btns[i].config(text=opt, state=tk.NORMAL, bg="#f4c542")
-
-        # Load image
-        #img_path = char_images.get(ans)
-        # if img_path:
-        #     img = Image.open(img_path).resize((200, 200))
-        #     self.photo = ImageTk.PhotoImage(img)
-        #     self.image_label.config(image=self.photo)
-        # else:
-        #     self.image_label.config(image="")
-
-        self.status.config(text=f"Question {self.q_no + 1} of 5")
-
-        self.time_left = 10
-        self.update_timer()
-
-    def update_timer(self):
-        self.timer_label.config(text=f"Time Left: {self.time_left}s")
-        if self.time_left > 0:
-            self.time_left -= 1
-            self.timer_id = self.root.after(1000, self.update_timer)
+    # Buttons for options
+    def check_answer(selected):
+        if selected == correct_char:
+            st.session_state.score += 1
+            st.success("Correct!")
         else:
-            self.disable_buttons()
-            pygame.mixer.music.load("wrong.wav")
-            pygame.mixer.music.play()
-            self.root.after(1500, self.next_q)
-
-    def disable_buttons(self):
-        for btn in self.btns:
-            btn.config(state=tk.DISABLED, bg="#ccc")
-
-    def check_ans(self, idx):
-        selected = self.opts[idx]
-        correct = self.cur_q["char"]
-        if selected == correct:
-            self.score += 1
-            self.btns[idx].config(bg="green")
-            pygame.mixer.music.load("correct.wav")
+            st.error(f"Wrong! Correct answer was: {correct_char}")
+        st.session_state.q_no += 1
+        if st.session_state.q_no < 5:
+            st.session_state.current_question = st.session_state.qs[st.session_state.q_no]
+            st.experimental_rerun()
         else:
-            self.btns[idx].config(bg="red")
-            pygame.mixer.music.load("wrong.wav")
-        pygame.mixer.music.play()
-        self.disable_buttons()
+            st.experimental_rerun()
 
-        if self.timer_id:
-            self.root.after_cancel(self.timer_id)
+    for opt in options:
+        if st.button(opt):
+            check_answer(opt)
+            break
 
-        self.q_no += 1
-        self.root.after(1500, self.next_q)
+    # Show score and progress
+    st.write(f"Question {st.session_state.q_no + 1} of 5")
+    st.write(f"Score: {st.session_state.score}")
 
-    def show_result(self):
-        msg = f"You scored {self.score}/5!\n"
-        if self.score == 5:
-            msg += "You're a true FRIENDS fanatic!"
-        elif self.score >= 3:
-            msg += "Well done! You know your FRIENDS pretty well."
+    # Show result if quiz is over
+    if st.session_state.q_no >= 5:
+        st.markdown(f"## Quiz Over!")
+        st.markdown(f"Your final score: {st.session_state.score}/5")
+        if st.session_state.score == 5:
+            st.success("You're a true FRIENDS fanatic!")
+        elif st.session_state.score >= 3:
+            st.info("Well done! You know your FRIENDS pretty well.")
         else:
-            msg += "Hmm... time for a few reruns!"
+            st.warning("Hmm... time for a few reruns!")
 
-        play = messagebox.askyesno("Quiz Over", msg + "\n\nPlay again?")
-        if play:
-            self.start_quiz()
-        else:
-            self.root.destroy()
+        if st.button("Play Again"):
+            st.session_state.score = 0
+            st.session_state.q_no = 0
+            st.session_state.qs = random.sample(quotes, 5)
+            st.session_state.current_question = st.session_state.qs[0]
+            st.experimental_rerun()
 
-
-root = tk.Tk()
-app = QuizApp(root)
-root.mainloop()
+if __name__ == "__main__":
+    run_quiz()
